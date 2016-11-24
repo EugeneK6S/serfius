@@ -2,7 +2,6 @@ package api
 
 import (
 	"../config"
-	consulcli "../consul"
 	"../osinfo"
 	serfcli "../serf"
 	"fmt"
@@ -56,14 +55,6 @@ func Start(cfg config.Config) {
 	/* attach endpoints */
 	attachRoot(r)
 
-	// connect to Consul server;
-	cons, err := consulcli.NewConsulClient(cfg.Discovery.Server)
-	errorHandle(err)
-	// cons.Register(osinfo.Hostname, osinfo.IPAddress, 5050)
-
-	serf, err := serfcli.NewSerfClient(cfg.Discovery.Server)
-	errorHandle(err)
-
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "pong",
@@ -71,6 +62,9 @@ func Start(cfg config.Config) {
 	})
 
 	r.GET("/inventory/:team", func(c *gin.Context) {
+
+		serf, err := serfcli.NewSerfClient(cfg.Discovery.Server)
+		errorHandle(err)
 
 		type Host struct {
 			Node []string `json:"hosts"`
@@ -127,6 +121,9 @@ func Start(cfg config.Config) {
 	})
 
 	r.GET("/member/:team", func(c *gin.Context) {
+		serf, err := serfcli.NewSerfClient(cfg.Discovery.Server)
+		errorHandle(err)
+
 		status := "alive"
 		var tags map[string]string
 		tags = make(map[string]string)
@@ -148,6 +145,8 @@ func Start(cfg config.Config) {
 	})
 
 	r.GET("/members", func(c *gin.Context) {
+		serf, err := serfcli.NewSerfClient(cfg.Discovery.Server)
+		errorHandle(err)
 
 		members, _ := serf.ListAllMembers()
 		for _, member := range members {
@@ -168,24 +167,24 @@ func Start(cfg config.Config) {
 		}
 	})
 
-	r.GET("/nodes", func(c *gin.Context) {
+	// r.GET("/nodes", func(c *gin.Context) {
 
-		members, _ := cons.ListMembers()
-		for _, member := range members {
+	// 	members, _ := cons.ListMembers()
+	// 	for _, member := range members {
 
-			var msg struct {
-				MemberName    string
-				MemberAddress string
-				Role          string
-			}
+	// 		var msg struct {
+	// 			MemberName    string
+	// 			MemberAddress string
+	// 			Role          string
+	// 		}
 
-			msg.MemberName = member.Name
-			msg.MemberAddress = member.Addr
-			msg.Role = member.Tags["role"]
+	// 		msg.MemberName = member.Name
+	// 		msg.MemberAddress = member.Addr
+	// 		msg.Role = member.Tags["role"]
 
-			c.JSON(http.StatusOK, msg)
-		}
-	})
+	// 		c.JSON(http.StatusOK, msg)
+	// 	}
+	// })
 
 	r.POST("/provision/:env", func(c *gin.Context) {
 
@@ -205,7 +204,12 @@ func Start(cfg config.Config) {
 	})
 
 	/* run on port */
-	err = app.Run(cfg.Api.Bind)
+
+	if cfg.Api.Bind == "" {
+		cfg.Api.Bind = ":4001"
+	}
+
+	err := app.Run(cfg.Api.Bind)
 	if err != nil {
 		log.Fatal(err)
 	}
