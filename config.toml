@@ -1,0 +1,5 @@
+[api]
+bind=":4001"
+
+[discovery]
+server="vamsdocker03:7373"
