@@ -19,7 +19,7 @@ type DiscoveryConfig struct {
 	Server string `toml:"server"`
 }
 
-func ReadConfig(configfile string) Config {
+func ReadConfig(configfile string) (Config, error) {
 	_, err := os.Stat(configfile)
 	if err != nil {
 		log.Fatal("Config file is missing: ", configfile)
@@ -29,6 +29,6 @@ func ReadConfig(configfile string) Config {
 	if _, err := toml.DecodeFile(configfile, &config); err != nil {
 		log.Fatal(err)
 	}
-	//log.Print(config.Index)
-	return config
+
+	return config, err
 }

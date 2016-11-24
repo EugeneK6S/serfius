@@ -5,6 +5,7 @@ import (
 	consulcli "../consul"
 	"../osinfo"
 	serfcli "../serf"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
@@ -16,6 +17,14 @@ var app *gin.Engine
 
 func init() {
 	gin.SetMode(gin.ReleaseMode)
+}
+
+func errorHandle(err error) error {
+	if err != nil {
+		fmt.Errorf("An error has occured %g", err)
+		panic(err)
+	}
+	return nil
 }
 
 func attachRoot(app *gin.RouterGroup) {
@@ -39,13 +48,21 @@ func attachRoot(app *gin.RouterGroup) {
 	})
 }
 
-func Start(cfg config.ApiConfig, cons consulcli.Client, serf serfcli.Client) {
+func Start(cfg config.Config) {
 
 	app = gin.New()
 	r := app.Group("/")
 
 	/* attach endpoints */
 	attachRoot(r)
+
+	// connect to Consul server;
+	cons, err := consulcli.NewConsulClient(cfg.Discovery.Server)
+	errorHandle(err)
+	// cons.Register(osinfo.Hostname, osinfo.IPAddress, 5050)
+
+	serf, err := serfcli.NewSerfClient(cfg.Discovery.Server)
+	errorHandle(err)
 
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
@@ -188,7 +205,7 @@ func Start(cfg config.ApiConfig, cons consulcli.Client, serf serfcli.Client) {
 	})
 
 	/* run on port */
-	err := app.Run(cfg.Bind)
+	err = app.Run(cfg.Api.Bind)
 	if err != nil {
 		log.Fatal(err)
 	}

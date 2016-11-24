@@ -3,21 +3,13 @@ package main
 import (
 	"./api"
 	"./config"
-	consulcli "./consul"
+	// consulcli "./consul"
 	"./osinfo"
-	serf "./serf"
-	"fmt"
+	// serf "./serf"
+	// "fmt"
 	flag "github.com/spf13/pflag"
 	"time"
 )
-
-func errorHandle(err error) error {
-	if err != nil {
-		fmt.Errorf("An error has occured %g", err)
-		panic(err)
-	}
-	return nil
-}
 
 func main() {
 
@@ -34,17 +26,9 @@ func main() {
 		configfile = "/Users/kabae/go_workspace/dsmprov/config.toml"
 	}
 
-	cfg := config.ReadConfig(configfile)
+	cfg, _ := config.ReadConfig(configfile)
 
-	// connect to Consul server;
-	cons, err := consulcli.NewConsulClient(cfg.Discovery.Server)
-	errorHandle(err)
-	// cons.Register(osinfo.Hostname, osinfo.IPAddress, 5050)
-
-	serfcli, err := serf.NewSerfClient(cfg.Discovery.Server)
-	errorHandle(err)
-
-	go api.Start(cfg.Api, cons, serfcli)
+	go api.Start(cfg)
 	<-(chan string)(nil)
 
 }
