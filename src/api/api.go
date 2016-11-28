@@ -156,10 +156,12 @@ func Start(cfg config.Config) {
 				MemberAddress string
 				Team          string
 				Role          string
+				Status        string
 			}
 
 			msg.MemberName = member.Name
 			msg.MemberAddress = member.Addr.String()
+			msg.Status = member.Status
 			msg.Team = member.Tags["team"]
 			msg.Role = member.Tags["role"]
 
