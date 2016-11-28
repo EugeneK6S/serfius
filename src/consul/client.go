@@ -1,5 +1,7 @@
 package consulcli
 
+///  UNDER CONSTRUCTION, NOT USED FOR NOW ///
+
 // import (
 // 	"fmt"
 // 	consul "github.com/hashicorp/consul/api"
