@@ -22,6 +22,7 @@ func main() {
 	flag.StringVarP(&configfile, "config", "c", "", "Path to configuration file")
 	flag.Parse()
 
+	// Use default config location if not specified
 	if configfile == "" {
 		configfile = "/Users/kabae/go_workspace/dsmprov/config.toml"
 	}

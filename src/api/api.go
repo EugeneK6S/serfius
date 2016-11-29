@@ -169,25 +169,6 @@ func Start(cfg config.Config) {
 		}
 	})
 
-	// r.GET("/nodes", func(c *gin.Context) {
-
-	// 	members, _ := cons.ListMembers()
-	// 	for _, member := range members {
-
-	// 		var msg struct {
-	// 			MemberName    string
-	// 			MemberAddress string
-	// 			Role          string
-	// 		}
-
-	// 		msg.MemberName = member.Name
-	// 		msg.MemberAddress = member.Addr
-	// 		msg.Role = member.Tags["role"]
-
-	// 		c.JSON(http.StatusOK, msg)
-	// 	}
-	// })
-
 	r.POST("/provision/:env", func(c *gin.Context) {
 
 		// id := c.Query("id")

@@ -1,4 +1,4 @@
-package consulcli
+package serfcli
 
 import (
 	serf "github.com/hashicorp/serf/client"
