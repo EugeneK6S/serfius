@@ -9,10 +9,19 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"regexp"
 	"time"
 )
 
 var app *gin.Engine
+
+type Register struct {
+	NodeName  string `form:"node" json:"node" binding:"required"`
+	PrivateIP string `form:"private_ip" json:"private_ip" binding:"required"`
+	PublicIP  string `form:"public_ip" json:"public_ip" binding:"required"`
+}
+
+var reg Register
 
 func init() {
 	gin.SetMode(gin.ReleaseMode)
@@ -90,17 +99,18 @@ func Start(cfg config.Config) {
 		for _, member := range members {
 			allNodes = append(allNodes, member.Name)
 			status := osinfo.CheckPort("tcp", member.Name+":2377")
-			if status == "Reachable" {
+			match, _ := regexp.MatchString("master.*", member.Tags["role"])
+			if (status == "Reachable") || match {
 				allManager = append(allManager, member.Name)
 			} else {
 				allWorker = append(allWorker, member.Name)
 			}
 		}
 
-		if len(allManager) == 0 {
-			allManager = append(allManager, allNodes[0])
-			allWorker = append(allWorker[:0], allWorker[1:]...)
-		}
+		// if len(allManager) == 0 {
+		// 	allManager = append(allManager, allNodes[0])
+		// 	// allWorker = append(allWorker[:0], allWorker[1:]...)
+		// }
 
 		jsons := &Inventory{
 			// All: Host{
