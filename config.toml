@@ -2,4 +2,4 @@
 bind=":4001"
 
 [discovery]
-server="vamsdocker03:7373"
+server="localhost:7373"
