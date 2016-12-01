@@ -24,7 +24,7 @@ func main() {
 
 	// Use default config location if not specified
 	if configfile == "" {
-		configfile = "/Users/kabae/go_workspace/dsmprov/config.toml"
+		configfile = "./config/config.toml"
 	}
 
 	cfg, _ := config.ReadConfig(configfile)
