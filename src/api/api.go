@@ -143,12 +143,14 @@ func Start(cfg config.Config) {
 		for _, member := range members {
 
 			var msg struct {
-				MemberName    string
-				MemberAddress string
+				MemberName     string
+				MemberAddress  string
+				MemberPublicIP string
 			}
 
 			msg.MemberName = member.Name
 			msg.MemberAddress = member.Addr.String()
+			msg.MemberPublicIP = member.Tags["public_ip"]
 
 			c.JSON(http.StatusOK, msg)
 		}
