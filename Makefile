@@ -27,4 +27,10 @@ install: build
 	install -m 755 ./bin/${NAME} /usr/bin/${NAME}
 
 resolve-deps: 
-	go get src/
+	go get -u -v \
+	github.com/gin-gonic/gin \
+	github.com/BurntSushi/toml \
+	github.com/Sirupsen/logrus \
+	github.com/shirou/gopsutil/mem \
+	github.com/hashicorp/serf/client \
+	github.com/laher/goxc
