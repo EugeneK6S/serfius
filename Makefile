@@ -14,7 +14,7 @@ LDFLAGS := "-X main.version=${VERSION} -X main.build=${BUILD_HASH}"
 
 default: build
 
-build: 
+build: resolve-deps
 	@echo Building ${NAME}:${VERSION}
 	go build -v -o ./bin/${NAME} -ldflags ${LDFLAGS} ./src/main.go
 	@echo Finished
@@ -25,3 +25,6 @@ clean:
 
 install: build
 	install -m 755 ./bin/${NAME} /usr/bin/${NAME}
+
+resolve-deps: 
+	go get src/
