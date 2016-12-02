@@ -33,4 +33,5 @@ resolve-deps:
 	github.com/Sirupsen/logrus \
 	github.com/shirou/gopsutil/mem \
 	github.com/hashicorp/serf/client \
-	github.com/laher/goxc
+	github.com/laher/goxc \
+	github.com/spf13/pflag
