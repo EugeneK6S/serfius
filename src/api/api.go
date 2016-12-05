@@ -6,6 +6,7 @@ import (
 	serfcli "../serf"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	client "github.com/hashicorp/serf/client"
 	"log"
 	"net/http"
 	"os"
@@ -96,7 +97,7 @@ func Start(cfg config.Config) {
 		tags["team"] = c.Param("team")
 
 		members, _ := serf.ListMembers(tags, status)
-		for _, member := range members {
+		for _, member := range *members {
 			allNodes = append(allNodes, member.Name)
 			status := osinfo.CheckPort("tcp", member.Name+":2377")
 			match, _ := regexp.MatchString("master.*", member.Tags["role"])
@@ -130,38 +131,24 @@ func Start(cfg config.Config) {
 		c.JSON(http.StatusOK, jsons)
 	})
 
-	r.GET("/member/:team", func(c *gin.Context) {
+	r.GET("/members/:team", func(c *gin.Context) {
 		serf, err := serfcli.NewSerfClient(cfg.Discovery.Server)
 		errorHandle(err)
+		team := c.Param("team")
 
-		status := "alive"
-		var tags map[string]string
-		tags = make(map[string]string)
-		tags["team"] = c.Param("team")
+		var members *[]client.Member
 
-		members, _ := serf.ListMembers(tags, status)
-		for _, member := range members {
-
-			var msg struct {
-				MemberName     string
-				MemberAddress  string
-				MemberPublicIP string
-			}
-
-			msg.MemberName = member.Name
-			msg.MemberAddress = member.Addr.String()
-			msg.MemberPublicIP = member.Tags["public_ip"]
-
-			c.JSON(http.StatusOK, msg)
+		if team == "all" {
+			members, _ = serf.ListAllMembers()
+		} else {
+			status := "alive"
+			var tags map[string]string
+			tags = make(map[string]string)
+			tags["team"] = c.Param("team")
+			members, _ = serf.ListMembers(tags, status)
 		}
-	})
 
-	r.GET("/members", func(c *gin.Context) {
-		serf, err := serfcli.NewSerfClient(cfg.Discovery.Server)
-		errorHandle(err)
-
-		members, _ := serf.ListAllMembers()
-		for _, member := range members {
+		for _, member := range *members {
 
 			var msg struct {
 				MemberName     string

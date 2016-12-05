@@ -6,11 +6,12 @@ import (
 
 type Client interface {
 	// Get cluster members
-	ListAllMembers() ([]serf.Member, error)
-	ListMembers(map[string]string, string) ([]serf.Member, error)
+
+	ListAllMembers() (*[]serf.Member, error)
+	ListMembers(map[string]string, string) (*[]serf.Member, error)
 }
 
-type client struct {
+type RPCClient struct {
 	serf *serf.RPCClient
 }
 
@@ -20,21 +21,21 @@ func NewSerfClient(serf_address string) (Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &client{serf: serfcli}, nil
+	return &RPCClient{serf: serfcli}, nil
 }
 
-func (c *client) ListAllMembers() ([]serf.Member, error) {
+func (c *RPCClient) ListAllMembers() (*[]serf.Member, error) {
 	members, err := c.serf.Members()
 	if err != nil {
 		return nil, err
 	}
-	return members, nil
+	return &members, nil
 }
 
-func (c *client) ListMembers(tags map[string]string, status string) ([]serf.Member, error) {
+func (c *RPCClient) ListMembers(tags map[string]string, status string) (*[]serf.Member, error) {
 	members, err := c.serf.MembersFiltered(tags, status, "")
 	if err != nil {
 		return nil, err
 	}
-	return members, nil
+	return &members, nil
 }
