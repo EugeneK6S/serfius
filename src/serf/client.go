@@ -6,9 +6,9 @@ import (
 
 type Client interface {
 	// Get cluster members
-
 	ListAllMembers() (*[]serf.Member, error)
 	ListMembers(map[string]string, string) (*[]serf.Member, error)
+	NodeLeave(string) error
 }
 
 type RPCClient struct {
@@ -38,4 +38,12 @@ func (c *RPCClient) ListMembers(tags map[string]string, status string) (*[]serf.
 		return nil, err
 	}
 	return &members, nil
+}
+
+func (c *RPCClient) NodeLeave(node string) error {
+	err := c.serf.ForceLeave(node)
+	if err != nil {
+		return err
+	}
+	return nil
 }

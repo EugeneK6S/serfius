@@ -22,6 +22,17 @@ type Register struct {
 	PublicIP  string `form:"public_ip" json:"public_ip" binding:"required"`
 }
 
+type Host struct {
+	Node []string `json:"hosts"`
+}
+
+type Inventory struct {
+	// All     Host `json:"all"`
+	Engine  Host `json:"docker_engine"`
+	Manager Host `json:"docker_swarm_manager"`
+	Worker  Host `json:"docker_swarm_worker"`
+}
+
 var reg Register
 
 func init() {
@@ -36,12 +47,12 @@ func errorHandle(err error) error {
 	return nil
 }
 
-func attachRoot(app *gin.RouterGroup) {
+func attachRoot(rg *gin.RouterGroup) {
 
 	/**
 	 * Global stats
 	 */
-	app.GET("/", func(c *gin.Context) {
+	rg.GET("/", func(c *gin.Context) {
 
 		c.IndentedJSON(http.StatusOK, gin.H{
 			"hostname":       osinfo.Hostname,
@@ -57,35 +68,25 @@ func attachRoot(app *gin.RouterGroup) {
 	})
 }
 
-func Start(cfg config.Config) {
+func attachEndpoints(rg *gin.RouterGroup, cfg config.Config) {
 
-	app = gin.New()
-	r := app.Group("/")
-
-	/* attach endpoints */
-	attachRoot(r)
-
-	r.GET("/ping", func(c *gin.Context) {
+	rg.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "pong",
 		})
 	})
 
-	r.GET("/inventory/:team", func(c *gin.Context) {
+	rg.GET("/force_leave/:node", func(c *gin.Context) {
+		serf, err := serfcli.NewSerfClient(cfg.Discovery.Server)
+		errorHandle(err)
+		node := c.Param("node")
+		serf.NodeLeave(node)
+	})
+
+	rg.GET("/inventory/:team", func(c *gin.Context) {
 
 		serf, err := serfcli.NewSerfClient(cfg.Discovery.Server)
 		errorHandle(err)
-
-		type Host struct {
-			Node []string `json:"hosts"`
-		}
-
-		type Inventory struct {
-			// All     Host `json:"all"`
-			Engine  Host `json:"docker_engine"`
-			Manager Host `json:"docker_swarm_manager"`
-			Worker  Host `json:"docker_swarm_worker"`
-		}
 
 		allNodes := []string{}
 		allManager := []string{}
@@ -131,7 +132,7 @@ func Start(cfg config.Config) {
 		c.JSON(http.StatusOK, jsons)
 	})
 
-	r.GET("/members/:team", func(c *gin.Context) {
+	rg.GET("/members/:team", func(c *gin.Context) {
 		serf, err := serfcli.NewSerfClient(cfg.Discovery.Server)
 		errorHandle(err)
 		team := c.Param("team")
@@ -144,36 +145,37 @@ func Start(cfg config.Config) {
 			status := "alive"
 			var tags map[string]string
 			tags = make(map[string]string)
-			tags["team"] = c.Param("team")
+			tags["team"] = team
 			members, _ = serf.ListMembers(tags, status)
+		}
+
+		var msg struct {
+			DockerMaster   string
+			Hypervisor     string
+			Location       string
+			MemberAddress  string
+			MemberName     string
+			MemberPublicIP string
+			Status         string
+			Team           string
 		}
 
 		for _, member := range *members {
 
-			var msg struct {
-				MemberName     string
-				MemberAddress  string
-				MemberPublicIP string
-				Team           string
-				Role           string
-				Status         string
-			}
-
-			msg.MemberName = member.Name
+			msg.DockerMaster = member.Tags["docker_master"]
+			msg.Hypervisor = member.Tags["hypervisor"]
+			msg.Location = member.Tags["location"]
 			msg.MemberAddress = member.Addr.String()
+			msg.MemberName = member.Name
+			msg.MemberPublicIP = member.Tags["public_ip"]
 			msg.Status = member.Status
 			msg.Team = member.Tags["team"]
-			msg.Role = member.Tags["role"]
-			msg.MemberPublicIP = member.Tags["public_ip"]
 
 			c.JSON(http.StatusOK, msg)
 		}
 	})
 
-	r.POST("/provision/:env", func(c *gin.Context) {
-
-		// id := c.Query("id")
-		// page := c.DefaultQuery("page", "0")
+	rg.POST("/provision/:env", func(c *gin.Context) {
 		leader := c.PostForm("leader")
 		team := c.PostForm("team")
 
@@ -184,9 +186,17 @@ func Start(cfg config.Config) {
 			c.String(http.StatusOK, "Will provision %s environment with leader %s for team %s", env, leader, team)
 
 		}
-
 	})
+}
 
+func Start(cfg config.Config) {
+
+	app = gin.New()
+	rg := app.Group("/")
+
+	/* attach endpoints */
+	attachRoot(rg)
+	attachEndpoints(rg, cfg)
 	/* run on port */
 
 	if cfg.Api.Bind == "" {
