@@ -35,6 +35,7 @@ type Inventory struct {
 
 type Msg struct {
 	DockerMaster   string
+	DockerRole     string
 	Hypervisor     string
 	Location       string
 	MemberAddress  string
@@ -112,7 +113,7 @@ func attachEndpoints(rg *gin.RouterGroup, cfg config.Config) {
 		for _, member := range *members {
 			allNodes = append(allNodes, member.Name)
 			status := osinfo.CheckPort("tcp", member.Name+":2377")
-			match, _ := regexp.MatchString("*.master.*", member.Tags["role"])
+			match, _ := regexp.MatchString(".*master.*", member.Tags["docker_role"])
 			if (status == "Reachable") || match {
 				allManager = append(allManager, member.Name)
 			} else {
@@ -155,6 +156,7 @@ func attachEndpoints(rg *gin.RouterGroup, cfg config.Config) {
 		for _, member := range *members {
 
 			msg.DockerMaster = member.Tags["docker_master"]
+			msg.DockerRole = member.Tags["docker_role"]
 			msg.Hypervisor = member.Tags["hypervisor"]
 			msg.Location = member.Tags["location"]
 			msg.MemberAddress = member.Addr.String()
@@ -192,6 +194,7 @@ func attachEndpoints(rg *gin.RouterGroup, cfg config.Config) {
 		for _, member := range *members {
 
 			msg.DockerMaster = member.Tags["docker_master"]
+			msg.DockerRole = member.Tags["docker_role"]
 			msg.Hypervisor = member.Tags["hypervisor"]
 			msg.Location = member.Tags["location"]
 			msg.MemberAddress = member.Addr.String()
