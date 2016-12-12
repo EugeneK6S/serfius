@@ -33,6 +33,17 @@ type Inventory struct {
 	Worker  Host `json:"docker_swarm_worker"`
 }
 
+type Msg struct {
+	DockerMaster   string
+	Hypervisor     string
+	Location       string
+	MemberAddress  string
+	MemberName     string
+	MemberPublicIP string
+	Status         string
+	Team           string
+}
+
 var reg Register
 
 func init() {
@@ -83,9 +94,11 @@ func attachEndpoints(rg *gin.RouterGroup, cfg config.Config) {
 		serf.NodeLeave(node)
 	})
 
+	// Specifics to Ansible + Swarm provisioning
 	rg.GET("/inventory/:team", func(c *gin.Context) {
 
 		serf, err := serfcli.NewSerfClient(cfg.Discovery.Server)
+		defer serf.Close()
 		errorHandle(err)
 
 		allNodes := []string{}
@@ -101,7 +114,7 @@ func attachEndpoints(rg *gin.RouterGroup, cfg config.Config) {
 		for _, member := range *members {
 			allNodes = append(allNodes, member.Name)
 			status := osinfo.CheckPort("tcp", member.Name+":2377")
-			match, _ := regexp.MatchString("master.*", member.Tags["role"])
+			match, _ := regexp.MatchString("*.master.*", member.Tags["role"])
 			if (status == "Reachable") || match {
 				allManager = append(allManager, member.Name)
 			} else {
@@ -134,26 +147,17 @@ func attachEndpoints(rg *gin.RouterGroup, cfg config.Config) {
 
 	rg.GET("/member/:name", func(c *gin.Context) {
 		serf, err := serfcli.NewSerfClient(cfg.Discovery.Server)
+		defer serf.Close()
 		errorHandle(err)
 		name := c.Param("name")
 
 		var members *[]client.Member
+		var msg Msg
 
 		status := "alive"
 		var tags map[string]string
 		tags = make(map[string]string)
 		members, _ = serf.ListMembers(tags, status, name)
-
-		var msg struct {
-			DockerMaster   string
-			Hypervisor     string
-			Location       string
-			MemberAddress  string
-			MemberName     string
-			MemberPublicIP string
-			Status         string
-			Team           string
-		}
 
 		for _, member := range *members {
 
@@ -172,6 +176,8 @@ func attachEndpoints(rg *gin.RouterGroup, cfg config.Config) {
 
 	rg.GET("/members/:team", func(c *gin.Context) {
 		serf, err := serfcli.NewSerfClient(cfg.Discovery.Server)
+		defer serf.Close()
+
 		errorHandle(err)
 		team := c.Param("team")
 
@@ -187,16 +193,7 @@ func attachEndpoints(rg *gin.RouterGroup, cfg config.Config) {
 			members, _ = serf.ListMembers(tags, status, "")
 		}
 
-		var msg struct {
-			DockerMaster   string
-			Hypervisor     string
-			Location       string
-			MemberAddress  string
-			MemberName     string
-			MemberPublicIP string
-			Status         string
-			Team           string
-		}
+		var msg Msg
 
 		for _, member := range *members {
 

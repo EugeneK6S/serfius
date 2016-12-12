@@ -6,6 +6,7 @@ import (
 
 type Client interface {
 	// Get cluster members
+	Close() error
 	ListAllMembers() (*[]serf.Member, error)
 	ListMembers(map[string]string, string, string) (*[]serf.Member, error)
 	NodeLeave(string) error
@@ -22,6 +23,14 @@ func NewSerfClient(serf_address string) (Client, error) {
 		return nil, err
 	}
 	return &RPCClient{serf: serfcli}, nil
+}
+
+func (c *RPCClient) Close() error {
+	err := c.serf.Close()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c *RPCClient) ListAllMembers() (*[]serf.Member, error) {
