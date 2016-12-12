@@ -34,15 +34,16 @@ type Inventory struct {
 }
 
 type Msg struct {
-	DockerMaster   string
-	DockerRole     string
-	Hypervisor     string
-	Location       string
-	MemberAddress  string
-	MemberName     string
-	MemberPublicIP string
-	Status         string
-	Team           string
+	DockerMaster       string
+	DockerMasterConfig string
+	DockerRole         string
+	Hypervisor         string
+	Location           string
+	MemberAddress      string
+	MemberName         string
+	MemberPublicIP     string
+	Status             string
+	Team               string
 }
 
 func init() {
@@ -156,6 +157,7 @@ func attachEndpoints(rg *gin.RouterGroup, cfg config.Config) {
 		for _, member := range *members {
 
 			msg.DockerMaster = member.Tags["docker_master"]
+			msg.DockerMasterConfig = member.Tags["docker_master_config"]
 			msg.DockerRole = member.Tags["docker_role"]
 			msg.Hypervisor = member.Tags["hypervisor"]
 			msg.Location = member.Tags["location"]
@@ -194,6 +196,7 @@ func attachEndpoints(rg *gin.RouterGroup, cfg config.Config) {
 		for _, member := range *members {
 
 			msg.DockerMaster = member.Tags["docker_master"]
+			msg.DockerMasterConfig = member.Tags["docker_master_config"]
 			msg.DockerRole = member.Tags["docker_role"]
 			msg.Hypervisor = member.Tags["hypervisor"]
 			msg.Location = member.Tags["location"]
