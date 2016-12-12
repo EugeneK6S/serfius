@@ -194,6 +194,7 @@ func attachEndpoints(rg *gin.RouterGroup, cfg config.Config) {
 		}
 
 		var msg Msg
+		var res []Msg
 
 		for _, member := range *members {
 
@@ -205,9 +206,9 @@ func attachEndpoints(rg *gin.RouterGroup, cfg config.Config) {
 			msg.MemberPublicIP = member.Tags["public_ip"]
 			msg.Status = member.Status
 			msg.Team = member.Tags["team"]
-
-			c.JSON(http.StatusOK, msg)
+			res = append(res, msg)
 		}
+		c.JSON(http.StatusOK, res)
 	})
 
 	rg.POST("/provision/:env", func(c *gin.Context) {
