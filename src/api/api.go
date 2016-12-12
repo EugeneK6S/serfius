@@ -44,8 +44,6 @@ type Msg struct {
 	Team           string
 }
 
-var reg Register
-
 func init() {
 	gin.SetMode(gin.ReleaseMode)
 }
@@ -121,11 +119,6 @@ func attachEndpoints(rg *gin.RouterGroup, cfg config.Config) {
 				allWorker = append(allWorker, member.Name)
 			}
 		}
-
-		// if len(allManager) == 0 {
-		// 	allManager = append(allManager, allNodes[0])
-		// 	// allWorker = append(allWorker[:0], allWorker[1:]...)
-		// }
 
 		jsons := &Inventory{
 			// All: Host{
