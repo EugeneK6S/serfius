@@ -97,7 +97,7 @@ func attachEndpoints(rg *gin.RouterGroup, cfg config.Config) {
 		tags = make(map[string]string)
 		tags["team"] = c.Param("team")
 
-		members, _ := serf.ListMembers(tags, status)
+		members, _ := serf.ListMembers(tags, status, "")
 		for _, member := range *members {
 			allNodes = append(allNodes, member.Name)
 			status := osinfo.CheckPort("tcp", member.Name+":2377")
@@ -132,6 +132,44 @@ func attachEndpoints(rg *gin.RouterGroup, cfg config.Config) {
 		c.JSON(http.StatusOK, jsons)
 	})
 
+	rg.GET("/member/:name", func(c *gin.Context) {
+		serf, err := serfcli.NewSerfClient(cfg.Discovery.Server)
+		errorHandle(err)
+		name := c.Param("name")
+
+		var members *[]client.Member
+
+		status := "alive"
+		var tags map[string]string
+		tags = make(map[string]string)
+		members, _ = serf.ListMembers(tags, status, name)
+
+		var msg struct {
+			DockerMaster   string
+			Hypervisor     string
+			Location       string
+			MemberAddress  string
+			MemberName     string
+			MemberPublicIP string
+			Status         string
+			Team           string
+		}
+
+		for _, member := range *members {
+
+			msg.DockerMaster = member.Tags["docker_master"]
+			msg.Hypervisor = member.Tags["hypervisor"]
+			msg.Location = member.Tags["location"]
+			msg.MemberAddress = member.Addr.String()
+			msg.MemberName = member.Name
+			msg.MemberPublicIP = member.Tags["public_ip"]
+			msg.Status = member.Status
+			msg.Team = member.Tags["team"]
+
+			c.JSON(http.StatusOK, msg)
+		}
+	})
+
 	rg.GET("/members/:team", func(c *gin.Context) {
 		serf, err := serfcli.NewSerfClient(cfg.Discovery.Server)
 		errorHandle(err)
@@ -146,7 +184,7 @@ func attachEndpoints(rg *gin.RouterGroup, cfg config.Config) {
 			var tags map[string]string
 			tags = make(map[string]string)
 			tags["team"] = team
-			members, _ = serf.ListMembers(tags, status)
+			members, _ = serf.ListMembers(tags, status, "")
 		}
 
 		var msg struct {

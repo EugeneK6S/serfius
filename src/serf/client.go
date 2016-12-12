@@ -7,7 +7,7 @@ import (
 type Client interface {
 	// Get cluster members
 	ListAllMembers() (*[]serf.Member, error)
-	ListMembers(map[string]string, string) (*[]serf.Member, error)
+	ListMembers(map[string]string, string, string) (*[]serf.Member, error)
 	NodeLeave(string) error
 }
 
@@ -32,8 +32,8 @@ func (c *RPCClient) ListAllMembers() (*[]serf.Member, error) {
 	return &members, nil
 }
 
-func (c *RPCClient) ListMembers(tags map[string]string, status string) (*[]serf.Member, error) {
-	members, err := c.serf.MembersFiltered(tags, status, "")
+func (c *RPCClient) ListMembers(tags map[string]string, status string, name string) (*[]serf.Member, error) {
+	members, err := c.serf.MembersFiltered(tags, status, name)
 	if err != nil {
 		return nil, err
 	}
