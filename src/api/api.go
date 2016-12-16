@@ -27,7 +27,7 @@ type Host struct {
 }
 
 type Inventory struct {
-	// All     Host `json:"all"`
+	All     Host `json:"all"`
 	Engine  Host `json:"docker_engine"`
 	Manager Host `json:"docker_swarm_manager"`
 	Worker  Host `json:"docker_swarm_worker"`
@@ -101,40 +101,56 @@ func attachEndpoints(rg *gin.RouterGroup, cfg config.Config) {
 		defer serf.Close()
 		errorHandle(err)
 
+		var members *[]client.Member
 		allNodes := []string{}
 		allManager := []string{}
 		allWorker := []string{}
+		team := c.Param("team")
+		jsons := &Inventory{}
 
-		status := "alive"
-		var tags map[string]string
-		tags = make(map[string]string)
-		tags["team"] = c.Param("team")
-
-		members, _ := serf.ListMembers(tags, status, "")
-		for _, member := range *members {
-			allNodes = append(allNodes, member.Name)
-			status := osinfo.CheckPort("tcp", member.Name+":2377")
-			match, _ := regexp.MatchString(".*master.*", member.Tags["docker_role"])
-			if (status == "Reachable") || match {
-				allManager = append(allManager, member.Name)
-			} else {
-				allWorker = append(allWorker, member.Name)
+		if team == "all" {
+			members, _ = serf.ListAllMembers()
+			for _, member := range *members {
+				allNodes = append(allNodes, member.Name)
+				jsons = &Inventory{
+					All: Host{
+						Node: allNodes,
+					},
+				}
 			}
-		}
+		} else {
+			status := "alive"
+			var tags map[string]string
+			tags = make(map[string]string)
+			tags["team"] = team
 
-		jsons := &Inventory{
-			// All: Host{
-			// 	Node: allNodes,
-			// },
-			Engine: Host{
-				Node: allNodes,
-			},
-			Manager: Host{
-				Node: allManager,
-			},
-			Worker: Host{
-				Node: allWorker,
-			},
+			members, _ = serf.ListMembers(tags, status, "")
+			for _, member := range *members {
+				allNodes = append(allNodes, member.Name)
+				status := osinfo.CheckPort("tcp", member.Name+":2377")
+				match, _ := regexp.MatchString(".*master.*", member.Tags["docker_role"])
+				if (status == "Reachable") || match {
+					allManager = append(allManager, member.Name)
+				} else {
+					allWorker = append(allWorker, member.Name)
+				}
+			}
+
+			jsons = &Inventory{
+				All: Host{
+					Node: []string{},
+				},
+				Engine: Host{
+					Node: allNodes,
+				},
+				Manager: Host{
+					Node: allManager,
+				},
+				Worker: Host{
+					Node: allWorker,
+				},
+			}
+
 		}
 
 		c.JSON(http.StatusOK, jsons)
