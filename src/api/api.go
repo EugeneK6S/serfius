@@ -34,7 +34,7 @@ type Inventory struct {
 }
 
 type Msg struct {
-	DockerMaster       string
+	// ClusterID          string
 	DockerMasterConfig string
 	DockerRole         string
 	Hypervisor         string
@@ -42,6 +42,7 @@ type Msg struct {
 	MemberAddress      string
 	MemberName         string
 	MemberPublicIP     string
+	NodeExpiration     string
 	Status             string
 	Team               string
 }
@@ -111,7 +112,7 @@ func attachEndpoints(rg *gin.RouterGroup, cfg config.Config) {
 		if team == "all" {
 			members, _ = serf.ListAllMembers()
 			for _, member := range *members {
-				allNodes = append(allNodes, member.Name)
+				allNodes = append(allNodes, member.Addr.String())
 				jsons = &Inventory{
 					All: Host{
 						Node: allNodes,
@@ -126,13 +127,13 @@ func attachEndpoints(rg *gin.RouterGroup, cfg config.Config) {
 
 			members, _ = serf.ListMembers(tags, status, "")
 			for _, member := range *members {
-				allNodes = append(allNodes, member.Name)
-				status := osinfo.CheckPort("tcp", member.Name+":2377")
+				allNodes = append(allNodes, member.Addr.String())
+				status := osinfo.CheckPort("tcp", member.Addr.String()+":2377")
 				match, _ := regexp.MatchString(".*master.*", member.Tags["docker_role"])
 				if (status == "Reachable") || match {
-					allManager = append(allManager, member.Name)
+					allManager = append(allManager, member.Addr.String())
 				} else {
-					allWorker = append(allWorker, member.Name)
+					allWorker = append(allWorker, member.Addr.String())
 				}
 			}
 
@@ -172,7 +173,6 @@ func attachEndpoints(rg *gin.RouterGroup, cfg config.Config) {
 
 		for _, member := range *members {
 
-			msg.DockerMaster = member.Tags["docker_master"]
 			msg.DockerMasterConfig = member.Tags["docker_master_config"]
 			msg.DockerRole = member.Tags["docker_role"]
 			msg.Hypervisor = member.Tags["hypervisor"]
@@ -180,6 +180,7 @@ func attachEndpoints(rg *gin.RouterGroup, cfg config.Config) {
 			msg.MemberAddress = member.Addr.String()
 			msg.MemberName = member.Name
 			msg.MemberPublicIP = member.Tags["public_ip"]
+			msg.NodeExpiration = member.Tags["node_expiration"]
 			msg.Status = member.Status
 			msg.Team = member.Tags["team"]
 
@@ -211,7 +212,6 @@ func attachEndpoints(rg *gin.RouterGroup, cfg config.Config) {
 
 		for _, member := range *members {
 
-			msg.DockerMaster = member.Tags["docker_master"]
 			msg.DockerMasterConfig = member.Tags["docker_master_config"]
 			msg.DockerRole = member.Tags["docker_role"]
 			msg.Hypervisor = member.Tags["hypervisor"]
@@ -219,6 +219,7 @@ func attachEndpoints(rg *gin.RouterGroup, cfg config.Config) {
 			msg.MemberAddress = member.Addr.String()
 			msg.MemberName = member.Name
 			msg.MemberPublicIP = member.Tags["public_ip"]
+			msg.NodeExpiration = member.Tags["node_expiration"]
 			msg.Status = member.Status
 			msg.Team = member.Tags["team"]
 			res = append(res, msg)

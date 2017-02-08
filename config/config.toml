@@ -2,4 +2,4 @@
 bind=":4001"
 
 [discovery]
-server="localhost:7373"
+server="samssuper02-eng:7373"
